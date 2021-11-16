@@ -5,7 +5,11 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ de43006d-f6ad-4e63-af73-d3e7f9a33559
-using SymPy                    
+begin
+	using Conda
+	Conda.add("sympy")
+	using SymPy
+end
 
 # ╔═╡ 29d26680-646b-4ec7-bd17-0d1b874f7c24
 using ForwardDiff
@@ -499,6 +503,7 @@ Babylonian(D((x,1)))
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
+Conda = "8f4d0f93-b110-5947-807f-2305c1781a2d"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 HypertextLiteral = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -508,6 +513,7 @@ PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 SymPy = "24249f21-da20-56a4-8eb1-6a02cf4ae2e6"
 
 [compat]
+Conda = "~1.5.2"
 ForwardDiff = "~0.10.23"
 HypertextLiteral = "~0.9.3"
 Plots = "~1.23.6"
