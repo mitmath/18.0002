@@ -35,18 +35,20 @@ end
 # ╔═╡ 3abba47d-f2a4-4e8e-a5a4-18aa8724f880
 md"""
 # Autodiff: *Calculus  from another angle*
-(and the special role played by Julia's multiple dispatch and compiler technology)
+## (and the special role played by Julia's multiple dispatch and compiler technology)
+### Alan Edelman, MIT
 
-> *Alan Edelman, 2017*
+The first time I heard about automatic differentiation, it was easy for me to imagine what it was.  I was wrong.  In my head, I thought it was straightforward symbolic differentiation applied to code.  I kind of imagined it was like executing Mathematica or Maple, or even just automatically doing what I learned to do in my calculus class. 
 
+**Symbolic Derivatives** $br
+$(Resource("https://math24.net/images/table-trig-derivatives.svg", :width => 290))
 
-  The first time I heard about automatic differentiation, it was easy for me to imagine what it was.  I was wrong.  In my head, I thought it was straightforward symbolic differentiation applied to code.  I kind of imagined it was like executing Mathematica or Maple, or even just automatically doing what I learned to do in my calculus class. 
-
-$(Resource("http://www2.bc.cc.ca.us/resperic/math6a/lectures/ch5/1/IntegralTable.gif", :width => 190))
 
   .... and anyway if it was not that, then it must be finite differences, like one learns in a numerical computing class.
+
   
-$(Resource("http://image.mathcaptain.com/cms/images/122/Diff%202.png", :width => 150))
+**Numerical Differentiation (finite differences) ** $br
+$(Resource("https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Finite_difference_method.svg/614px-Finite_difference_method.svg.png", :width => 350))
 
 
 """
@@ -78,12 +80,6 @@ struct D <: Number  # D is a function-derivative pair
     f::Tuple{Float64,Float64}
 end
 
-# ╔═╡ ddba9771-006e-4012-9a7a-4839dd7b6d47
-let
-	d = D((5,6))
-	d.f[2]
-end
-
 # ╔═╡ f568d9d4-6da8-425e-a0d3-83329ccf72ba
 md"""
 Sum Rule: `(x+y)' = x' + y'`
@@ -94,18 +90,11 @@ Quotient Rule: `(x/y)' = (yx'-xy') / y^2`
 # ╔═╡ 07ef3f23-9fdb-406b-88fd-cac39522a18b
 begin
 	Base.:+(x::D, y::D) = D(x.f .+ y.f)
-	Base.:/(x::D, y::D) = D((x.f[1]/y.f[1], (y.f[1]*x.f[2] - x.f[1]*y.f[2])/y.f[1]^2))
-	
+	Base.:/(x::D, y::D) = D((x.f[1]/y.f[1], (y.f[1]*x.f[2] - x.f[1]*y.f[2])/y.f[1]^2))	
 	Base.convert(::Type{D}, x::Real) = D((x,zero(x)))
 	Base.promote_rule(::Type{D}, ::Type{<:Number}) = D
 
-	# these are used later
-	Base.:^(d::D, n::Integer) = D((d.f[1]^n, n*d.f[1]^(n-1) * d.f[2]))
-	Base.:^(d::D, n::Real) =    D((d.f[1]^n, n*d.f[1]^(n-1) * d.f[2]))
-
-	Base.:-(x::D, y::D) = D(x.f .- y.f)
-	Base.:*(x::D, y::D) = D((x.f[1]*y.f[1], (x.f[2]*y.f[1] + x.f[1]*y.f[2])))
-	Base.inv(x::D) = 1/x
+	
 end
 
 # ╔═╡ edc5f4de-df01-42d8-9672-ec3c0694bdcd
@@ -153,25 +142,13 @@ md"""
 Let us by hand take the "derivative" of the Babylonian iteration with respect to x. Specifically t′=dt/dx
 """
 
-# ╔═╡ e6177b08-5693-4d67-8eb0-bbf029f143aa
-sin(1.0)
-
-# ╔═╡ 010e95d3-a206-4d7b-8dcc-37e7cc46c547
-^(2,5)
-
-# ╔═╡ 86f558ed-cbb4-47be-bcd0-1bf10b82a91d
-# Base.:^(d::D,n) = (d.f[1]^n, n*d.f[1]^(n-1) * d.f[2])
-
-# ╔═╡ 141df931-1569-43a3-b56e-fd862d181f06
-@which sin(1)
-
-# ╔═╡ 25266665-1051-48cd-8c9b-fedb93c1a012
-cos(1.0)
-
 # ╔═╡ 7dd8371f-0c1f-43d7-89a7-c4f5244b683b
 md"""
 What just happened?  Answer: We created an iteration by hand for t′ given our iteration for t. Then we ran the iteration alongside the iteration for t.
 """
+
+# ╔═╡ 86f558ed-cbb4-47be-bcd0-1bf10b82a91d
+# Base.:^(d::D,n) = (d.f[1]^n, n*d.f[1]^(n-1) * d.f[2])
 
 # ╔═╡ 1cdfe1b7-af30-4f9a-ac12-63c682be21cd
 md"""
@@ -203,6 +180,15 @@ Others like to think of how engineers just drop the ``\mathcal{O}(\epsilon^2)`` 
 \end{align*}
 ```
 """
+
+# ╔═╡ 840e49c5-a5c3-4c47-ade0-087103fc8b02
+begin
+	#Base.:^(d::D, n::Integer) = D((d.f[1]^n, n*d.f[1]^(n-1) * d.f[2]))
+	#Base.:^(d::D, n::Real) =    D((d.f[1]^n, n*d.f[1]^(n-1) * d.f[2]))
+	#Base.:-(x::D, y::D) = D(x.f .- y.f)
+	# Base.:*(x::D, y::D) = D((x.f[1]*y.f[1], (x.f[2]*y.f[1] + x.f[1]*y.f[2])))
+	#Base.inv(x::D) = 1/x
+end
 
 # ╔═╡ 91f00d28-d150-468e-88e7-bd67e52d232b
 # Base.show(io::IO,x::D) = print(io,x.f[1]," + ",x.f[2]," ϵ")
@@ -378,26 +364,6 @@ let
 	x = π
 	dBabylonian(x), .5/√x
 end
-
-# ╔═╡ 398cb782-1dd9-47fa-bd60-073d2462e93d
-# x -  x^3/3! + x^5/5! 
-function istanbul_sin(x)
-    t = 0.0
-    for i=1:10
-        t -= (-1.0)^i * (x)^(2*i-1) / prod(1.0:(2*i-1))
-    end
-    t
-end
-        
-
-# ╔═╡ ae9e151d-44d8-4d18-9b0d-bc1f2ddb788b
- istanbul_sin(1.0)
-
-# ╔═╡ c9584af1-4c0e-43d6-8975-14f16aeadfcb
-istanbul_sin( D((1.0,1.0)))
-
-# ╔═╡ cc48f8e1-fcf8-40c0-8340-4762f8fc42d0
-istanbul_sin(D((1.0,1.0)))
 
 # ╔═╡ d9b05e67-445e-4965-9925-5cf2b7ff0422
 1/(1+ϵ)  # Exact power series:  1-ϵ+ϵ²-ϵ³-...
@@ -1489,7 +1455,6 @@ version = "0.9.1+5"
 # ╟─37d2f560-a8f4-4410-af93-edbd05c1717b
 # ╟─24af958b-4fe3-40b8-9798-8eabe467eea5
 # ╠═d870b113-2250-4363-ab6f-4acab6c3fd55
-# ╠═ddba9771-006e-4012-9a7a-4839dd7b6d47
 # ╟─f568d9d4-6da8-425e-a0d3-83329ccf72ba
 # ╠═07ef3f23-9fdb-406b-88fd-cac39522a18b
 # ╠═ee2a5e81-d540-49de-acaf-1a5831d8838d
@@ -1510,20 +1475,13 @@ version = "0.9.1+5"
 # ╟─6d158dd8-d801-4b17-870e-3103dca2ccb3
 # ╠═077d539a-3c44-4f4d-8e1c-534b9cd693ed
 # ╠═d49bb920-4d17-4b90-b3bc-eefe0be6476c
-# ╠═398cb782-1dd9-47fa-bd60-073d2462e93d
-# ╠═ae9e151d-44d8-4d18-9b0d-bc1f2ddb788b
-# ╠═e6177b08-5693-4d67-8eb0-bbf029f143aa
-# ╠═010e95d3-a206-4d7b-8dcc-37e7cc46c547
-# ╠═86f558ed-cbb4-47be-bcd0-1bf10b82a91d
-# ╠═c9584af1-4c0e-43d6-8975-14f16aeadfcb
-# ╠═cc48f8e1-fcf8-40c0-8340-4762f8fc42d0
-# ╠═141df931-1569-43a3-b56e-fd862d181f06
-# ╠═25266665-1051-48cd-8c9b-fedb93c1a012
 # ╟─7dd8371f-0c1f-43d7-89a7-c4f5244b683b
+# ╠═86f558ed-cbb4-47be-bcd0-1bf10b82a91d
 # ╠═f05dca86-35d4-4fc7-8b26-aecfca6cad17
 # ╟─1cdfe1b7-af30-4f9a-ac12-63c682be21cd
 # ╟─0760055e-9d68-48be-b3cd-34b72f42ebad
 # ╟─46503cf1-95d8-4a9c-98da-c465d66ba0c3
+# ╠═840e49c5-a5c3-4c47-ade0-087103fc8b02
 # ╠═91f00d28-d150-468e-88e7-bd67e52d232b
 # ╠═ebf49bda-589f-4389-9a2a-cd5382bd0263
 # ╠═9baf6cd3-5a63-424a-8576-a1bc5d1b5296
