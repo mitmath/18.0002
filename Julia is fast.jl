@@ -303,12 +303,13 @@ results = DataFrame(
 	], 
 	
 	"Best time" => [
+		bench === NaN ? NaN : 
 		minimum(bench.times) * 1e-6 * u"ms"
 
 		for bench in [
 			c_bench
 			py_list_bench
-			py_numpy_bench
+			@isdefined(py_numpy_bench) ? py_numpy_bench : NaN
 			py_hand_bench
 			jl_bench
 			jl_bench_hand
