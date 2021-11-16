@@ -14,7 +14,10 @@ using Libdl
 using PyCall
 
 # ╔═╡ 05847b84-cebf-4298-a48a-43b214302aff
-using Conda
+begin
+	using Conda
+	Conda.add("numpy")
+end
 
 # ╔═╡ 83f68441-0dbf-49ac-892d-34757e17e421
 using PlutoTest
@@ -193,10 +196,6 @@ md"""
 `numpy` is an optimized C library, callable from Python.
 It may be installed within Julia as follows:
 """
-
-# ╔═╡ 1d3e138a-a9d8-4ad9-b1af-35d0ca90ddcc
-# You might need to run this to install numpy:
-#Conda.add("numpy")
 
 # ╔═╡ 4253dc26-32e4-4949-812b-148164adfa75
 numpy_sum = pyimport("numpy")["sum"]
@@ -710,7 +709,6 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─3c22585e-c949-494d-9731-d0b7dffa1776
 # ╟─1b9a977a-0394-409e-af33-4ab0eb5ce080
 # ╠═05847b84-cebf-4298-a48a-43b214302aff
-# ╠═1d3e138a-a9d8-4ad9-b1af-35d0ca90ddcc
 # ╠═4253dc26-32e4-4949-812b-148164adfa75
 # ╠═da217d78-f6a9-4808-9432-e6628fe2f517
 # ╠═2cfbbb33-4e82-4cf8-9fd1-dc8dc8e0a6a1
