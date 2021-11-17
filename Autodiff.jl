@@ -14,17 +14,8 @@ end
 # ╔═╡ 29d26680-646b-4ec7-bd17-0d1b874f7c24
 using ForwardDiff
 
-# ╔═╡ 58ef52f9-d1c8-45dc-b4af-2c1952baa1ad
-using LinearAlgebra
-
 # ╔═╡ 1dd7814a-3f20-420b-8367-463646925a0e
 using PlutoUI
-
-# ╔═╡ f911053a-fd18-441d-83bc-82d810c87626
-using HypertextLiteral
-
-# ╔═╡ 39da4330-3507-4ae3-857c-e1a929a678d9
-using PlutoTest
 
 # ╔═╡ ee7767b5-dea4-47f3-9bd6-042967a01948
 begin
@@ -47,7 +38,7 @@ $(Resource("https://math24.net/images/table-trig-derivatives.svg", :width => 290
   .... and anyway if it was not that, then it must be finite differences, like one learns in a numerical computing class.
 
   
-**Numerical Differentiation (finite differences) ** $br
+**Numerical Differentiation (finite differences)** $br
 $(Resource("https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Finite_difference_method.svg/614px-Finite_difference_method.svg.png", :width => 350))
 
 
@@ -93,171 +84,8 @@ begin
 	Base.:/(x::D, y::D) = D((x.f[1]/y.f[1], (y.f[1]*x.f[2] - x.f[1]*y.f[2])/y.f[1]^2))	
 	Base.convert(::Type{D}, x::Real) = D((x,zero(x)))
 	Base.promote_rule(::Type{D}, ::Type{<:Number}) = D
-
-	
-end
-
-# ╔═╡ edc5f4de-df01-42d8-9672-ec3c0694bdcd
-md"""
-## It just works!
-
-How does it work?  We will explain in a moment.  Right now marvel that it does.  Note we did not
-import any autodiff package.  Everything is just basic vanilla Julia.
-"""
-
-# ╔═╡ dfa4554a-b09d-4d90-83fb-0b0439231e32
-md"""
-## The assembler
-
-Most folks don't read assembler, but one can see that it is short.
-"""
-
-# ╔═╡ 73571d42-53a5-4d02-b2e7-cc4a1e42db2c
-md"""
-## Symbolically
-
-We haven't yet explained how it works, but it may be of some value to understand that the below is mathematically
-equivalent, though not what the computation is doing.
-
-Notice in the below that Babylonian works on SymPy symbols.
-"""
-
-# ╔═╡ faff8119-5d7c-4ae5-84df-ca322505adee
-x_sym = symbols("x");
-
-# ╔═╡ 89738277-a2ee-4546-902e-4557a1cdc0de
-md"""
-We can use `x_sym` to do symbolic arithmatic:
-"""
-
-# ╔═╡ 460f3ece-5b80-4538-972e-6d7b35ce8195
-md"Iterations as a function of ``x``:"
-
-# ╔═╡ 09654e11-9e4e-4690-a60b-71f406afa0a4
-md"Derivatives as a function of ``x``:"
-
-# ╔═╡ 6d158dd8-d801-4b17-870e-3103dca2ccb3
-md"""
-## How autodiff is getting the answer
-Let us by hand take the "derivative" of the Babylonian iteration with respect to x. Specifically t′=dt/dx
-"""
-
-# ╔═╡ 7dd8371f-0c1f-43d7-89a7-c4f5244b683b
-md"""
-What just happened?  Answer: We created an iteration by hand for t′ given our iteration for t. Then we ran the iteration alongside the iteration for t.
-"""
-
-# ╔═╡ 86f558ed-cbb4-47be-bcd0-1bf10b82a91d
-# Base.:^(d::D,n) = (d.f[1]^n, n*d.f[1]^(n-1) * d.f[2])
-
-# ╔═╡ 1cdfe1b7-af30-4f9a-ac12-63c682be21cd
-md"""
-How did this work?  It created the same derivative iteration, using very general rules that are set once and need not be written by hand.
-"""
-
-# ╔═╡ 0760055e-9d68-48be-b3cd-34b72f42ebad
-md"""
-Important:: The derivative is substituted before the JIT compiler, and thus efficient compiled code is executed.
-"""
-
-# ╔═╡ 46503cf1-95d8-4a9c-98da-c465d66ba0c3
-md"""
-## Dual Number Notation
-
-Instead of `D(a,b)` we can write ``a + b \epsilon``, where ``\epsilon`` satisfies ``\epsilon^2=0``.  (Some people like to recall imaginary numbers where an ``i`` is introduced with ``i^2=-1``.) 
-
-Others like to think of how engineers just drop the ``\mathcal{O}(\epsilon^2)`` terms.
-
-**The four rules are:**
-
-```math
-\begin{align*}
-(a+b\epsilon) \pm (c+d\epsilon) &= (a \pm c) +  (b \pm d)\epsilon \\
-\\
-(a+b\epsilon) * (c+d\epsilon) &= (ac) + (bc+ad)\epsilon \\
-\\
-(a+b\epsilon) \,/\, (c+d\epsilon) &= (a/c) + (bc-ad)/d^2 \epsilon
-\end{align*}
-```
-"""
-
-# ╔═╡ 840e49c5-a5c3-4c47-ade0-087103fc8b02
-begin
-	#Base.:^(d::D, n::Integer) = D((d.f[1]^n, n*d.f[1]^(n-1) * d.f[2]))
-	#Base.:^(d::D, n::Real) =    D((d.f[1]^n, n*d.f[1]^(n-1) * d.f[2]))
-	#Base.:-(x::D, y::D) = D(x.f .- y.f)
-	# Base.:*(x::D, y::D) = D((x.f[1]*y.f[1], (x.f[2]*y.f[1] + x.f[1]*y.f[2])))
-	#Base.inv(x::D) = 1/x
-end
-
-# ╔═╡ 91f00d28-d150-468e-88e7-bd67e52d232b
-# Base.show(io::IO,x::D) = print(io,x.f[1]," + ",x.f[2]," ϵ")
-
-# ╔═╡ ebf49bda-589f-4389-9a2a-cd5382bd0263
-# begin
-# 	# Add the last two rules
-# 	Base.:-(x::D, y::D) = D(x.f .- y.f)
-# 	Base.:*(x::D, y::D) = D((x.f[1]*y.f[1], (x.f[2]*y.f[1] + x.f[1]*y.f[2])))
-# end
-
-# ╔═╡ 9baf6cd3-5a63-424a-8576-a1bc5d1b5296
-eps_notation(x::D) = Text("$(x.f[1]) + $(x.f[2]) ϵ")
-
-# ╔═╡ c6c0840f-97a5-46ca-9e5c-d711409645ee
-D((1,0)) |> eps_notation
-
-# ╔═╡ eef51eb3-f61f-44fb-a5ef-c8092be651bf
-D((2,1)) ^2 |> eps_notation
-
-# ╔═╡ 170439e3-ff0b-4100-86f2-5a920c8645da
-begin
-	ϵ = D((0,1))
-end |> eps_notation
-
-# ╔═╡ eaa28814-4ec3-444b-9833-eb57b8a99732
-with_terminal() do
-	@code_native(ϵ^2)
-end
-
-# ╔═╡ 45f42fd1-03e8-4901-8cf7-a10d757c9b96
-ϵ * ϵ 
-
-# ╔═╡ 433c0a24-3634-4a1b-9f0b-c9137f5f3dfa
-ϵ^2
-
-# ╔═╡ 1c31395e-8c11-4136-af1b-29742834d5d5
-md"""
-## Generalization to arbitrary roots
-"""
-
-# ╔═╡ d5e412cc-8e92-43f5-b28a-87d6b5c14ae0
-md"""
-## Forward Diff
-Now that you understand it, you can use the official package
-"""
-
-# ╔═╡ 91c29413-3e2a-4d1a-99d5-1d9a6565ef25
-ForwardDiff.derivative(sqrt, 2)
-
-# ╔═╡ d07ac980-809d-4fd7-873e-cb97f8bd1915
-@which ForwardDiff.derivative(sqrt, 2)
-
-# ╔═╡ 33ab0a2c-ab42-489c-b3ea-1ef6382ff35d
-md"""
-## Close Look at Convergence
-"""
-
-# ╔═╡ e4f63be3-5fa9-47bb-8d55-2dd9b748cd8f
-begin
-	struct D1{T} <: Number  # D is a function-derivative pair
-	    f::Tuple{T,T}
-	end
-
-	Base.:+(x::D1, y::D1) = D1(x.f .+ y.f)
-	Base.:/(x::D1, y::D1) = D1((x.f[1]/y.f[1], (y.f[1]*x.f[2] - x.f[1]*y.f[2])/y.f[1]^2))
-	Base.convert(::Type{D1{T}}, x::Real) where {T} = D1((convert(T, x), zero(T)))
-	Base.promote_rule(::Type{D1{T}}, ::Type{S}) where {T,S<:Number} = D1{promote_type(T,S)}
-
+	Base.:-(x::D, y::D) = D(x.f .- y.f)
+    Base.:*(x::D, y::D) = D((x.f[1]*y.f[1], (x.f[2]*y.f[1] + x.f[1]*y.f[2])))
 end
 
 # ╔═╡ 713ec357-e015-4b8a-9460-75f611dbe500
@@ -295,44 +123,15 @@ let
 	)
 end
 
-# ╔═╡ e4d21c2f-b86b-4566-aa17-0f93dca00e83
-with_terminal() do
-	@code_native(Babylonian(D((2,1))))
-end
-
-# ╔═╡ 790ed2b0-91b1-4b2f-aac7-bab49aea4eb3
-map(1:5) do k
-	simplify(Babylonian(x_sym,N=k))
-end
-
-# ╔═╡ 18cc74a2-ad82-42a2-b2e4-cbde56b1cae3
-map(1:5) do k
-	simplify(diff(simplify(Babylonian(x_sym,N=k)),x_sym))
-end
-
-# ╔═╡ 3b61a005-958c-4c92-bdc1-e9c80189f035
-ForwardDiff.derivative(Babylonian, 2)
-
-# ╔═╡ 0e0c20d8-3c41-4ce5-bf31-f951b7761a58
-setprecision(3000) do
-	round.(Float64.(
-			log10.(
-				[Babylonian(BigFloat(2),N=k) for k=1:10] .- √BigFloat(2)
-			)
-		); digits=3)
-end
-
 # ╔═╡ ee2a5e81-d540-49de-acaf-1a5831d8838d
 let
-	x=49
-	
+	x=49	
 	Babylonian(D((x,1))), (√x,.5/√x)
 end
 
 # ╔═╡ ae9a2611-cdd0-44d5-9512-0a5a48fed77e
 let
-	x = π
-	
+	x = π	
 	Babylonian(D((x,1))), (√x,.5/√x)
 end
 
@@ -344,8 +143,74 @@ let
     title = " Babylonians Differentiated")
 end
 
+# ╔═╡ edc5f4de-df01-42d8-9672-ec3c0694bdcd
+md"""
+## It just works!
+
+How does it work?  We will explain in a moment.  Right now marvel that it does.  Note we did not
+import any autodiff package.  Everything is just basic vanilla Julia.
+"""
+
+# ╔═╡ dfa4554a-b09d-4d90-83fb-0b0439231e32
+md"""
+## The assembler
+
+Most folks don't read assembler, but one can see that it is short.
+"""
+
+# ╔═╡ e4d21c2f-b86b-4566-aa17-0f93dca00e83
+with_terminal() do
+	@code_native(Babylonian(D((2,1))))
+end
+
+# ╔═╡ 73571d42-53a5-4d02-b2e7-cc4a1e42db2c
+md"""
+## Symbolically
+
+We haven't yet explained how it works, but it may be of some value to understand that the below is mathematically
+equivalent, though not what the computation is doing.
+
+Notice in the below that Babylonian works on SymPy symbols.
+"""
+
+# ╔═╡ faff8119-5d7c-4ae5-84df-ca322505adee
+x = symbols("x")
+
+# ╔═╡ 89738277-a2ee-4546-902e-4557a1cdc0de
+md"""
+We can use `x` to do symbolic arithmatic:
+"""
+
 # ╔═╡ cd425623-c338-4b48-92dc-c93bd87dd943
-simplify((1 + x_sym) * (1 - x_sym))
+simplify((1 + x) * (1 - x))
+
+# ╔═╡ 460f3ece-5b80-4538-972e-6d7b35ce8195
+md"Iterations as a function of ``x``:"
+
+# ╔═╡ 790ed2b0-91b1-4b2f-aac7-bab49aea4eb3
+# map(1:5) do k
+# 	simplify(Babylonian(x,N=k))
+# end
+
+# ╔═╡ a8302810-f0fb-4d97-b008-d9c18736bc4f
+[ simplify(Babylonian(x,N=k)) for k=1:5]
+
+# ╔═╡ 09654e11-9e4e-4690-a60b-71f406afa0a4
+md"Derivatives as a function of ``x``:"
+
+# ╔═╡ 18cc74a2-ad82-42a2-b2e4-cbde56b1cae3
+# map(1:5) do k
+# 	simplify(diff(simplify(Babylonian(x_sym,N=k)),x_sym))
+# end
+
+# ╔═╡ c1ae7856-4583-4a89-ba9d-80f0d52e2b00
+[ simplify(diff(Babylonian(x,N=k))) for k=1:5]
+
+# ╔═╡ 6d158dd8-d801-4b17-870e-3103dca2ccb3
+md"""
+## How autodiff is getting the answer
+Let us by hand take the "derivative" of the Babylonian iteration with respect to x. Specifically t′=dt/dx
+"""
 
 # ╔═╡ 077d539a-3c44-4f4d-8e1c-534b9cd693ed
 function dBabylonian(x; N = 10) 
@@ -356,7 +221,6 @@ function dBabylonian(x; N = 10)
         t′= (t′+(t-x*t′)/t^2)/2; 
     end    
     t′
-
 end  
 
 # ╔═╡ d49bb920-4d17-4b90-b3bc-eefe0be6476c
@@ -365,17 +229,104 @@ let
 	dBabylonian(x), .5/√x
 end
 
+# ╔═╡ 7dd8371f-0c1f-43d7-89a7-c4f5244b683b
+md"""
+What just happened?  Answer: We created an iteration by hand for t′ given our iteration for t. Then we ran the iteration alongside the iteration for t.
+"""
+
+# ╔═╡ 86f558ed-cbb4-47be-bcd0-1bf10b82a91d
+# Base.:^(d::D,n) = (d.f[1]^n, n*d.f[1]^(n-1) * d.f[2])
+
+# ╔═╡ f05dca86-35d4-4fc7-8b26-aecfca6cad17
+let
+  x=π
+  Babylonian(D((x,1)))
+end
+
+# ╔═╡ 1cdfe1b7-af30-4f9a-ac12-63c682be21cd
+md"""
+How did this work?  It created the same derivative iteration, using very general rules that are set once and need not be written by hand.
+"""
+
+# ╔═╡ 0760055e-9d68-48be-b3cd-34b72f42ebad
+md"""
+Important:: The derivative is substituted before the JIT compiler, and thus efficient compiled code is executed.
+"""
+
+# ╔═╡ 46503cf1-95d8-4a9c-98da-c465d66ba0c3
+md"""
+## Dual Number Notation
+
+Instead of `D(a,b)` we can write ``a + b \epsilon``, where ``\epsilon`` satisfies ``\epsilon^2=0``.  (Some people like to recall imaginary numbers where an ``i`` is introduced with ``i^2=-1``.) 
+
+Others like to think of how engineers just drop the ``\mathcal{O}(\epsilon^2)`` terms.
+
+**The four rules are:**
+
+```math
+\begin{align*}
+(a+b\epsilon) \pm (c+d\epsilon) &= (a \pm c) +  (b \pm d)\epsilon \\
+\\
+(a+b\epsilon) * (c+d\epsilon) &= (ac) + (bc+ad)\epsilon \\
+\\
+(a+b\epsilon) \,/\, (c+d\epsilon) &= (a/c) + (bc-ad)/c^2 \epsilon
+\end{align*}
+```
+"""
+
+# ╔═╡ 840e49c5-a5c3-4c47-ade0-087103fc8b02
+begin
+	#Base.:^(d::D, n::Integer) = D((d.f[1]^n, n*d.f[1]^(n-1) * d.f[2]))
+	#Base.:^(d::D, n::Real) =    D((d.f[1]^n, n*d.f[1]^(n-1) * d.f[2]))
+	#Base.:-(x::D, y::D) = D(x.f .- y.f)
+	# Base.:*(x::D, y::D) = D((x.f[1]*y.f[1], (x.f[2]*y.f[1] + x.f[1]*y.f[2])))
+	#Base.inv(x::D) = 1/x
+end
+
+# ╔═╡ 91f00d28-d150-468e-88e7-bd67e52d232b
+Base.show(io::IO,x::D) = print(io,x.f[1]," + ",x.f[2]," ϵ")
+
+# ╔═╡ ebf49bda-589f-4389-9a2a-cd5382bd0263
+# begin
+# 	# Add the last two rules
+# 	Base.:-(x::D, y::D) = D(x.f .- y.f)
+# 	Base.:*(x::D, y::D) = D((x.f[1]*y.f[1], (x.f[2]*y.f[1] + x.f[1]*y.f[2])))
+# end
+
+# ╔═╡ 9baf6cd3-5a63-424a-8576-a1bc5d1b5296
+#eps_notation(x::D) = Text("$(x.f[1]) + $(x.f[2]) ϵ")
+
+# ╔═╡ 60a8f02c-fd4b-4f3d-90f3-38723b015173
+
+
+# ╔═╡ c6c0840f-97a5-46ca-9e5c-d711409645ee
+D((1,0)) 
+
+# ╔═╡ eef51eb3-f61f-44fb-a5ef-c8092be651bf
+D((2,1))^2 # square just works!
+
+# ╔═╡ 170439e3-ff0b-4100-86f2-5a920c8645da
+ϵ = D((0,1))
+
+# ╔═╡ 45f42fd1-03e8-4901-8cf7-a10d757c9b96
+ϵ * ϵ 
+
+# ╔═╡ 433c0a24-3634-4a1b-9f0b-c9137f5f3dfa
+ϵ^2
+
 # ╔═╡ d9b05e67-445e-4965-9925-5cf2b7ff0422
 1/(1+ϵ)  # Exact power series:  1-ϵ+ϵ²-ϵ³-...
 
 # ╔═╡ 424083ab-78f4-4eef-a45d-2a716adbf52f
 (1+ϵ)*(1+ϵ)*(1+ϵ)*(1+ϵ)*(1+ϵ)  ## Note this just works (we didn't train powers)!!
 
-# ╔═╡ 5c26b4da-bd33-4bec-b531-3f27f0fe2f09
-(1+ϵ)^-10.0
-
 # ╔═╡ e469d433-3002-4a45-abf6-74f608cd6324
 (1+ϵ)^(-1)
+
+# ╔═╡ 1c31395e-8c11-4136-af1b-29742834d5d5
+md"""
+## Generalization to arbitrary roots
+"""
 
 # ╔═╡ 23a4675e-33cd-4d93-b647-2d6f6c0476ad
 function nthroot(x, n=2; t=1, N = 10) 
@@ -398,92 +349,37 @@ let
 	nthroot( x+ϵ,3), ∛x, 1/x^(2/3)/3
 end
 
-# ╔═╡ 158dc6f4-50db-4f96-ba8c-94972efadfc3
-1/sqrt(8)
-
-# ╔═╡ ac901494-a0aa-404d-a0a3-c04b4fbb1982
-z = D((2.0,1.0))
-
-# ╔═╡ 2839a404-308a-45a7-b186-885d2d5e926e
-z1 = D1((BigFloat(2.0),BigFloat(1.0)))
-
-# ╔═╡ 9ec45d60-ddb5-495f-ae2d-fe1e3dc8256c
-A = randn(3,3)
-
-# ╔═╡ 70fa9a9a-0f2a-4bc7-aad3-b41c059c36d0
-x3 = randn(3)
-
-# ╔═╡ a20b1360-33e2-4400-b32e-8611e57bd229
-ForwardDiff.gradient(x3->x3'A*x3,x3)
-
-# ╔═╡ d92deac4-0a80-4be4-8648-1b6f78e81aeb
-(A+A')*x3
-
-# ╔═╡ aaba684f-e240-47a8-8e87-1c7f0dbcd81c
-Strang = let
-	n = 4
-	SymTridiagonal(2*ones(n),-ones(n-1))
-end
-
-# ╔═╡ beac5f59-1b89-42ec-96b7-a200fa19d1e0
-Dump(Strang)
-
-# ╔═╡ a0ef4d6f-6db8-45d3-ae34-170bc6cc01cd
-Strang\rand(4)
-
-# ╔═╡ bc12b295-0150-47f8-b0f5-5c13c3301ef6
-cos(1.0)
-
-# ╔═╡ 2bf3955b-2bec-42b8-81d0-faa162198557
-1 / 0
-
-# ╔═╡ b77351e1-eaa1-4df9-8fe8-8e80ed9d2ca9
-0 / 0 
-
-# ╔═╡ e7529e7d-6260-4235-acb9-e875f5865877
--1/0
-
-# ╔═╡ ef6b9702-db5d-4eaf-8784-98737289657a
-Inf - Inf
-
-# ╔═╡ 5205f6d3-d935-41bc-8c97-dd3dc673dbc5
+# ╔═╡ d5e412cc-8e92-43f5-b28a-87d6b5c14ae0
 md"""
-IEEE system
+## Forward Diff
+Now that you understand it, you can use the official package
 """
 
-# ╔═╡ 1f1876e2-863e-4897-be79-717feb8d0b7d
-x = -0.0
+# ╔═╡ 91c29413-3e2a-4d1a-99d5-1d9a6565ef25
+ForwardDiff.derivative(sqrt, 2)
 
-# ╔═╡ f05dca86-35d4-4fc7-8b26-aecfca6cad17
-Babylonian(D((x,1)))
+# ╔═╡ 3b61a005-958c-4c92-bdc1-e9c80189f035
+ForwardDiff.derivative(Babylonian, 2)
 
-# ╔═╡ 9394a7af-7b3a-4416-b62e-e28cfada2b94
-1/x
+# ╔═╡ d07ac980-809d-4fd7-873e-cb97f8bd1915
+@which ForwardDiff.derivative(sqrt, 2)
 
-# ╔═╡ 28ef5a54-c672-44b2-8745-f97f68d676ef
-(0.0 == -0.0)
-
-# ╔═╡ 24aba338-0f4d-4301-a897-96d04fbab344
-(1/0.0 == -1/1.0)
+# ╔═╡ 158dc6f4-50db-4f96-ba8c-94972efadfc3
+1/sqrt(8)
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 Conda = "8f4d0f93-b110-5947-807f-2305c1781a2d"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
-HypertextLiteral = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
-LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-PlutoTest = "cb4044da-4d16-4ffa-a6a3-8cad7f73ebdc"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 SymPy = "24249f21-da20-56a4-8eb1-6a02cf4ae2e6"
 
 [compat]
 Conda = "~1.5.2"
 ForwardDiff = "~0.10.23"
-HypertextLiteral = "~0.9.3"
 Plots = "~1.23.6"
-PlutoTest = "~0.2.0"
 PlutoUI = "~0.7.19"
 SymPy = "~1.1.0"
 """
@@ -1049,12 +945,6 @@ git-tree-sha1 = "0d185e8c33401084cab546a756b387b15f76720c"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 version = "1.23.6"
 
-[[PlutoTest]]
-deps = ["HypertextLiteral", "InteractiveUtils", "Markdown", "Test"]
-git-tree-sha1 = "92b8ae1eee37c1b8f70d3a8fb6c3f2d81809a1c5"
-uuid = "cb4044da-4d16-4ffa-a6a3-8cad7f73ebdc"
-version = "0.2.0"
-
 [[PlutoUI]]
 deps = ["AbstractPlutoDingetjes", "Base64", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
 git-tree-sha1 = "e071adf21e165ea0d904b595544a8e514c8bb42c"
@@ -1446,7 +1336,7 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╟─3abba47d-f2a4-4e8e-a5a4-18aa8724f880
+# ╠═3abba47d-f2a4-4e8e-a5a4-18aa8724f880
 # ╟─c10103e5-23d3-404a-a3a7-d77ca34f9d83
 # ╠═713ec357-e015-4b8a-9460-75f611dbe500
 # ╟─ea58e432-017d-468c-aa0e-8b119f4846d6
@@ -1466,12 +1356,14 @@ version = "0.9.1+5"
 # ╟─73571d42-53a5-4d02-b2e7-cc4a1e42db2c
 # ╠═de43006d-f6ad-4e63-af73-d3e7f9a33559
 # ╠═faff8119-5d7c-4ae5-84df-ca322505adee
-# ╟─89738277-a2ee-4546-902e-4557a1cdc0de
+# ╠═89738277-a2ee-4546-902e-4557a1cdc0de
 # ╠═cd425623-c338-4b48-92dc-c93bd87dd943
 # ╟─460f3ece-5b80-4538-972e-6d7b35ce8195
 # ╠═790ed2b0-91b1-4b2f-aac7-bab49aea4eb3
+# ╠═a8302810-f0fb-4d97-b008-d9c18736bc4f
 # ╟─09654e11-9e4e-4690-a60b-71f406afa0a4
 # ╠═18cc74a2-ad82-42a2-b2e4-cbde56b1cae3
+# ╠═c1ae7856-4583-4a89-ba9d-80f0d52e2b00
 # ╟─6d158dd8-d801-4b17-870e-3103dca2ccb3
 # ╠═077d539a-3c44-4f4d-8e1c-534b9cd693ed
 # ╠═d49bb920-4d17-4b90-b3bc-eefe0be6476c
@@ -1485,15 +1377,14 @@ version = "0.9.1+5"
 # ╠═91f00d28-d150-468e-88e7-bd67e52d232b
 # ╠═ebf49bda-589f-4389-9a2a-cd5382bd0263
 # ╠═9baf6cd3-5a63-424a-8576-a1bc5d1b5296
+# ╠═60a8f02c-fd4b-4f3d-90f3-38723b015173
 # ╠═c6c0840f-97a5-46ca-9e5c-d711409645ee
 # ╠═eef51eb3-f61f-44fb-a5ef-c8092be651bf
 # ╠═170439e3-ff0b-4100-86f2-5a920c8645da
-# ╠═eaa28814-4ec3-444b-9833-eb57b8a99732
 # ╠═45f42fd1-03e8-4901-8cf7-a10d757c9b96
 # ╠═433c0a24-3634-4a1b-9f0b-c9137f5f3dfa
 # ╠═d9b05e67-445e-4965-9925-5cf2b7ff0422
 # ╠═424083ab-78f4-4eef-a45d-2a716adbf52f
-# ╠═5c26b4da-bd33-4bec-b531-3f27f0fe2f09
 # ╠═e469d433-3002-4a45-abf6-74f608cd6324
 # ╟─1c31395e-8c11-4136-af1b-29742834d5d5
 # ╠═23a4675e-33cd-4d93-b647-2d6f6c0476ad
@@ -1507,32 +1398,7 @@ version = "0.9.1+5"
 # ╠═3b61a005-958c-4c92-bdc1-e9c80189f035
 # ╠═d07ac980-809d-4fd7-873e-cb97f8bd1915
 # ╠═158dc6f4-50db-4f96-ba8c-94972efadfc3
-# ╟─33ab0a2c-ab42-489c-b3ea-1ef6382ff35d
-# ╠═0e0c20d8-3c41-4ce5-bf31-f951b7761a58
-# ╠═e4f63be3-5fa9-47bb-8d55-2dd9b748cd8f
-# ╠═ac901494-a0aa-404d-a0a3-c04b4fbb1982
-# ╠═2839a404-308a-45a7-b186-885d2d5e926e
-# ╠═9ec45d60-ddb5-495f-ae2d-fe1e3dc8256c
-# ╠═70fa9a9a-0f2a-4bc7-aad3-b41c059c36d0
-# ╠═a20b1360-33e2-4400-b32e-8611e57bd229
-# ╠═d92deac4-0a80-4be4-8648-1b6f78e81aeb
-# ╠═58ef52f9-d1c8-45dc-b4af-2c1952baa1ad
-# ╠═aaba684f-e240-47a8-8e87-1c7f0dbcd81c
-# ╠═beac5f59-1b89-42ec-96b7-a200fa19d1e0
-# ╠═a0ef4d6f-6db8-45d3-ae34-170bc6cc01cd
-# ╠═bc12b295-0150-47f8-b0f5-5c13c3301ef6
-# ╠═2bf3955b-2bec-42b8-81d0-faa162198557
-# ╠═b77351e1-eaa1-4df9-8fe8-8e80ed9d2ca9
-# ╠═e7529e7d-6260-4235-acb9-e875f5865877
-# ╠═ef6b9702-db5d-4eaf-8784-98737289657a
-# ╟─5205f6d3-d935-41bc-8c97-dd3dc673dbc5
-# ╠═1f1876e2-863e-4897-be79-717feb8d0b7d
-# ╠═9394a7af-7b3a-4416-b62e-e28cfada2b94
-# ╠═28ef5a54-c672-44b2-8745-f97f68d676ef
-# ╠═24aba338-0f4d-4301-a897-96d04fbab344
 # ╠═1dd7814a-3f20-420b-8367-463646925a0e
-# ╠═f911053a-fd18-441d-83bc-82d810c87626
-# ╠═39da4330-3507-4ae3-857c-e1a929a678d9
 # ╠═ee7767b5-dea4-47f3-9bd6-042967a01948
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
