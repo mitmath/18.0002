@@ -28,6 +28,12 @@ using Unitful
 # ╔═╡ 5b811217-6d9c-4766-8500-72d2f911c6ec
 using DataFrames
 
+# ╔═╡ deed19d0-58f4-4694-9e83-d18a10e706d0
+using PlutoUI
+
+# ╔═╡ 3f3cf228-8bf1-486e-b56c-7e5ef9952f22
+TableOfContents()
+
 # ╔═╡ f804cccf-73ac-4827-8734-5993914080e7
 md"""
 # Julia is fast!
@@ -36,12 +42,14 @@ Very often, benchmarks are used to compare languages.  These benchmarks can lead
 
 The purpose of this notebook is for you to **see a simple benchmark for yourself**.  One can read the notebook and see what happened on the author's Macbook Pro with a 4-core Intel Core I7, or run the notebook yourself.
 
-_(This material began life as a wonderful lecture by Steven Johnson at MIT: [Boxes and registers](https://github.com/stevengj/18S096-iap17/blob/master/lecture1/Boxes-and-registers.ipynb).)_
+_(This material began life as a wonderful lecture by Steven Johnson at MIT: [Boxes and registers](https://github.com/mitmath/18S096/blob/master/lectures/lecture1/Boxes-and-registers.ipynb.)).)_
+
+
 """
 
 # ╔═╡ 2effeadb-b041-475d-b222-4090c33d9e33
 md"""
-## `sum`: An easy enough function to understand
+# `sum`: An easy enough function to understand
 """
 
 # ╔═╡ 38802b3a-b28a-456a-8587-94d8e2fedaf8
@@ -94,6 +102,7 @@ The current author does not speak C, so he does not read the cell below, but is 
 
 # ╔═╡ e74940c2-d957-480e-868a-d24d47b83677
 C_code = """
+
 	#include <stddef.h>
 	double c_sum(size_t n, double *X) {
 	    double s = 0.0;
@@ -102,20 +111,25 @@ C_code = """
 	    }
 	    return s;
 	}
-	"""
+
+	""";
+
+# ╔═╡ bb735d25-fa7a-4662-b6c8-a87cbedfec5f
+md"""
+#### Compile the C Code
+"""
 
 # ╔═╡ 5b31f261-30e9-4277-9a2a-d6b4ceb7efe5
 begin
-	# make a temporary file
+	
 	const Clib = tempname()
-	
-	
-	# compile to a shared library by piping C_code to gcc
-	# (works only if you have gcc installed):
+
 	cmd = `gcc  -fPIC -O3  -msse3 -xc -shared -o $(Clib * "." * Libdl.dlext) -`
+	
 	open(cmd, "w") do io
 	    print(io, C_code) 
 	end
+	
 end
 
 # ╔═╡ 31d330f8-d52c-4206-b034-75dd303a6d0d
@@ -187,6 +201,9 @@ pysum = pybuiltin("sum")
 # ╔═╡ 1d2ff7f8-7e5c-4ad0-af9c-1f3575d7c80a
 py_list_bench = @benchmark $pysum($a)
 
+# ╔═╡ 3c22585e-c949-494d-9731-d0b7dffa1776
+results[1:2, :]
+
 # ╔═╡ 1b9a977a-0394-409e-af33-4ab0eb5ce080
 md"""
 ## 3. Python: `numpy` 
@@ -247,14 +264,13 @@ jl_bench = @benchmark sum($a)
 
 # ╔═╡ 0fc56904-a192-47a4-92a6-bf4028e0c5ef
 md"""
-# 6. Julia (hand-written)
+## 6. Julia (hand-written)
 """
 
 # ╔═╡ 6ce188ea-e7d0-49f7-91af-90fc1acac6c5
 function mysum(a)   
     s = 0.0  # s = zero(eltype(a))
-    @inbounds @simd for x in a
-    #for x in a
+    for x in a
         s += x
     end
     s
@@ -263,11 +279,28 @@ end
 # ╔═╡ 5c14ea07-f178-4742-961c-3b8cc9155256
 jl_bench_hand = @benchmark $mysum($a)
 
+# ╔═╡ bb1a862f-4772-4e57-90d4-a00d90ce8c7b
+
+
 # ╔═╡ 96fd66cd-767d-4274-ade6-2a4caad2c6f5
 
 
 # ╔═╡ bd48bd12-096e-41c7-9278-fd990c765811
+md"""
+## 7. Julia (hand-written with processor parallelism)
+"""
 
+# ╔═╡ f48fcf30-b57a-4960-be2e-d08e5889ed42
+function myfastsum(A)   
+    s = 0.0  # s = zero(eltype(A))
+    @inbounds @simd for a in A  # <-- don't check bounds, parallel on processor
+        s += a
+    end
+    s
+end
+
+# ╔═╡ 0dd55c3f-776a-492d-84c4-9f937f98bfd7
+j_bench_hand_pp = @benchmark myfastsum($a)
 
 # ╔═╡ 9e9608d8-bd9f-4caf-9879-d09f9468c211
 md"""
@@ -287,42 +320,60 @@ Let's see the result again, sorted by runtime.
 
 # ╔═╡ a6dc1ca8-f607-42e5-b91c-1608a3e710ee
 md"""
-# Appendix
+#### Appendix
 """
 
 # ╔═╡ 733cc02d-f884-4931-9273-6a4c193b8451
+begin
+
+red(x) = HTML("<span style='color: red'>$(x)</span>")
+handwritten = red("hand-written")
+	
 results = DataFrame(
 	
 	"Method" => [
-		md"**C**" 					
-		md"**Python** - built-in"  	
-		md"**Python** - numpy"  		
-		md"**Python** - hand-written" 
-		md"**Julia** - built-in"  	
-		md"**Julia** - hand-written"  
+		md"C" 					
+		md"Python - built-in"  	
+		md"Python - numpy"  		
+		md"Python - $handwritten"
+		md"**Julia** - built-in"  
+		#md"""**Julia** - $(red("hand-written"))"""
+		md"**Julia** - $handwritten"  
+		#md"**Julia** - $handwritten parallel"
+		md"""**Julia** - $(red("hand-written parallel"))"""
+		
 	], 
 	
 	"Best time" => [
 		bench === NaN ? NaN : 
 		minimum(bench.times) * 1e-6 * u"ms"
 
+		# for bench in [
+		# 	c_bench
+		# 	py_list_bench
+		# 	@isdefined(py_numpy_bench) ? py_numpy_bench : NaN
+		# 	py_hand_bench
+		# 	jl_bench
+		# 	jl_bench_hand
+		# 	j_bench_hand_pp
+		# ]
+
 		for bench in [
-			c_bench
-			py_list_bench
+			@isdefined(c_bench) ? c_bench : NaN
+			@isdefined(py_list_bench) ? py_list_bench : NaN
 			@isdefined(py_numpy_bench) ? py_numpy_bench : NaN
-			py_hand_bench
-			jl_bench
-			jl_bench_hand
+			@isdefined(py_hand_bench) ? py_hand_bench : NaN
+			@isdefined(jl_bench) ? jl_bench : NaN
+			@isdefined(jl_bench_hand) ? jl_bench_hand : NaN
+			@isdefined(j_bench_hand_pp) ? j_bench_hand_pp : NaN
 		]
 	]
 	
 );
+end
 
 # ╔═╡ cd06669b-97b1-4fb5-ae3e-d28959be59c6
 results[1:1, :]
-
-# ╔═╡ 3c22585e-c949-494d-9731-d0b7dffa1776
-results[1:2, :]
 
 # ╔═╡ 4c4bc734-da8c-4e69-a27e-ffdd545d0b3b
 results[1:3, :]
@@ -336,6 +387,9 @@ results[1:5, :]
 # ╔═╡ e8b31960-c2f8-495c-b59f-1f434b3d95a8
 results[1:6, :]
 
+# ╔═╡ 1544c71f-8ce3-49b2-8570-4bb7eaac7f5f
+results
+
 # ╔═╡ de6853b5-0288-4acb-8a82-70ec6c2ceca1
 sort(results, "Best time")
 
@@ -347,6 +401,7 @@ Conda = "8f4d0f93-b110-5947-807f-2305c1781a2d"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
 PlutoTest = "cb4044da-4d16-4ffa-a6a3-8cad7f73ebdc"
+PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
@@ -355,6 +410,7 @@ BenchmarkTools = "~1.2.0"
 Conda = "~1.5.2"
 DataFrames = "~1.2.2"
 PlutoTest = "~0.2.0"
+PlutoUI = "~0.7.19"
 PyCall = "~1.92.5"
 Unitful = "~1.9.2"
 """
@@ -362,6 +418,12 @@ Unitful = "~1.9.2"
 # ╔═╡ 00000000-0000-0000-0000-000000000002
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
+
+[[AbstractPlutoDingetjes]]
+deps = ["Pkg"]
+git-tree-sha1 = "0bc60e3006ad95b4bb7497698dd7c6d649b9bc06"
+uuid = "6e696c72-6542-2067-7265-42206c756150"
+version = "1.1.1"
 
 [[ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
@@ -449,10 +511,22 @@ version = "0.4.2"
 deps = ["Random"]
 uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
 
+[[Hyperscript]]
+deps = ["Test"]
+git-tree-sha1 = "8d511d5b81240fc8e6802386302675bdf47737b9"
+uuid = "47d2ed2b-36de-50cf-bf87-49c2cf4b8b91"
+version = "0.0.4"
+
 [[HypertextLiteral]]
 git-tree-sha1 = "2b078b5a615c6c0396c77810d92ee8c6f470d238"
 uuid = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
 version = "0.9.3"
+
+[[IOCapture]]
+deps = ["Logging", "Random"]
+git-tree-sha1 = "f7be53659ab06ddc986428d3a9dcc95f6fa6705a"
+uuid = "b5f81e59-6552-4d32-b1f0-c071b021bf89"
+version = "0.2.2"
 
 [[InteractiveUtils]]
 deps = ["Markdown"]
@@ -549,6 +623,12 @@ deps = ["HypertextLiteral", "InteractiveUtils", "Markdown", "Test"]
 git-tree-sha1 = "92b8ae1eee37c1b8f70d3a8fb6c3f2d81809a1c5"
 uuid = "cb4044da-4d16-4ffa-a6a3-8cad7f73ebdc"
 version = "0.2.0"
+
+[[PlutoUI]]
+deps = ["AbstractPlutoDingetjes", "Base64", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
+git-tree-sha1 = "e071adf21e165ea0d904b595544a8e514c8bb42c"
+uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+version = "0.7.19"
 
 [[PooledArrays]]
 deps = ["DataAPI", "Future"]
@@ -672,8 +752,9 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 """
 
 # ╔═╡ Cell order:
+# ╠═3f3cf228-8bf1-486e-b56c-7e5ef9952f22
 # ╟─f804cccf-73ac-4827-8734-5993914080e7
-# ╟─2effeadb-b041-475d-b222-4090c33d9e33
+# ╠═2effeadb-b041-475d-b222-4090c33d9e33
 # ╟─38802b3a-b28a-456a-8587-94d8e2fedaf8
 # ╠═f5ecd1f2-ae74-4adb-9c43-14d9c38cd64e
 # ╠═0921f89e-c655-4971-9a81-c6ffa1ad1b4e
@@ -687,6 +768,7 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─e3271bcf-efbb-4dcd-aa9d-7c22c509ba95
 # ╠═1faf8461-4450-4e8f-a6f4-93cd74b77359
 # ╠═e74940c2-d957-480e-868a-d24d47b83677
+# ╟─bb735d25-fa7a-4662-b6c8-a87cbedfec5f
 # ╠═5b31f261-30e9-4277-9a2a-d6b4ceb7efe5
 # ╠═31d330f8-d52c-4206-b034-75dd303a6d0d
 # ╠═8ae1f54b-fde1-465a-ba5e-bed2d8c712c9
@@ -699,7 +781,7 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─678f32f2-46e9-4cb1-9e29-cc2f7e83b2b9
 # ╠═879fd9f7-09cc-49fc-9fc1-9df444722e9e
 # ╟─b8b91f9d-8386-4d25-b135-b3597f5fcc74
-# ╟─cd06669b-97b1-4fb5-ae3e-d28959be59c6
+# ╠═cd06669b-97b1-4fb5-ae3e-d28959be59c6
 # ╟─310d07e0-5cfb-40e9-b17b-5c49853c29f2
 # ╟─2d4c9401-fb74-4b5d-be50-fa81478e0af5
 # ╟─3b4b6519-e5e1-4a9d-acfb-cefd5d8ae07e
@@ -726,10 +808,14 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─0fc56904-a192-47a4-92a6-bf4028e0c5ef
 # ╠═6ce188ea-e7d0-49f7-91af-90fc1acac6c5
 # ╠═5c14ea07-f178-4742-961c-3b8cc9155256
-# ╟─e8b31960-c2f8-495c-b59f-1f434b3d95a8
+# ╠═e8b31960-c2f8-495c-b59f-1f434b3d95a8
+# ╠═bb1a862f-4772-4e57-90d4-a00d90ce8c7b
 # ╟─96fd66cd-767d-4274-ade6-2a4caad2c6f5
-# ╟─bd48bd12-096e-41c7-9278-fd990c765811
-# ╟─9e9608d8-bd9f-4caf-9879-d09f9468c211
+# ╠═bd48bd12-096e-41c7-9278-fd990c765811
+# ╠═f48fcf30-b57a-4960-be2e-d08e5889ed42
+# ╠═0dd55c3f-776a-492d-84c4-9f937f98bfd7
+# ╠═1544c71f-8ce3-49b2-8570-4bb7eaac7f5f
+# ╠═9e9608d8-bd9f-4caf-9879-d09f9468c211
 # ╠═de6853b5-0288-4acb-8a82-70ec6c2ceca1
 # ╟─034937b4-f557-4bac-8747-f5250084e8a0
 # ╟─6c3e4077-0db5-439a-8490-6429935c3103
@@ -739,5 +825,6 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═e99ac763-3f6c-4f6e-b2d5-bf5a04c17da9
 # ╠═5b811217-6d9c-4766-8500-72d2f911c6ec
 # ╠═733cc02d-f884-4931-9273-6a4c193b8451
+# ╠═deed19d0-58f4-4694-9e83-d18a10e706d0
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
