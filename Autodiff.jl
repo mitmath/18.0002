@@ -84,6 +84,7 @@ begin
 	Base.:/(x::D, y::D) = D((x.f[1]/y.f[1], (y.f[1]*x.f[2] - x.f[1]*y.f[2])/y.f[1]^2))	
 	Base.convert(::Type{D}, x::Real) = D((x,zero(x)))
 	Base.promote_rule(::Type{D}, ::Type{<:Number}) = D
+	# We'll do these later
 	Base.:-(x::D, y::D) = D(x.f .- y.f)
     Base.:*(x::D, y::D) = D((x.f[1]*y.f[1], (x.f[2]*y.f[1] + x.f[1]*y.f[2])))
 end
@@ -187,21 +188,11 @@ simplify((1 + x) * (1 - x))
 # ╔═╡ 460f3ece-5b80-4538-972e-6d7b35ce8195
 md"Iterations as a function of ``x``:"
 
-# ╔═╡ 790ed2b0-91b1-4b2f-aac7-bab49aea4eb3
-# map(1:5) do k
-# 	simplify(Babylonian(x,N=k))
-# end
-
 # ╔═╡ a8302810-f0fb-4d97-b008-d9c18736bc4f
 [ simplify(Babylonian(x,N=k)) for k=1:5]
 
 # ╔═╡ 09654e11-9e4e-4690-a60b-71f406afa0a4
 md"Derivatives as a function of ``x``:"
-
-# ╔═╡ 18cc74a2-ad82-42a2-b2e4-cbde56b1cae3
-# map(1:5) do k
-# 	simplify(diff(simplify(Babylonian(x_sym,N=k)),x_sym))
-# end
 
 # ╔═╡ c1ae7856-4583-4a89-ba9d-80f0d52e2b00
 [ simplify(diff(Babylonian(x,N=k))) for k=1:5]
@@ -233,9 +224,6 @@ end
 md"""
 What just happened?  Answer: We created an iteration by hand for t′ given our iteration for t. Then we ran the iteration alongside the iteration for t.
 """
-
-# ╔═╡ 86f558ed-cbb4-47be-bcd0-1bf10b82a91d
-# Base.:^(d::D,n) = (d.f[1]^n, n*d.f[1]^(n-1) * d.f[2])
 
 # ╔═╡ f05dca86-35d4-4fc7-8b26-aecfca6cad17
 let
@@ -274,33 +262,14 @@ Others like to think of how engineers just drop the ``\mathcal{O}(\epsilon^2)`` 
 ```
 """
 
-# ╔═╡ 840e49c5-a5c3-4c47-ade0-087103fc8b02
-begin
-	#Base.:^(d::D, n::Integer) = D((d.f[1]^n, n*d.f[1]^(n-1) * d.f[2]))
-	#Base.:^(d::D, n::Real) =    D((d.f[1]^n, n*d.f[1]^(n-1) * d.f[2]))
-	#Base.:-(x::D, y::D) = D(x.f .- y.f)
-	# Base.:*(x::D, y::D) = D((x.f[1]*y.f[1], (x.f[2]*y.f[1] + x.f[1]*y.f[2])))
-	#Base.inv(x::D) = 1/x
-end
-
 # ╔═╡ 91f00d28-d150-468e-88e7-bd67e52d232b
 Base.show(io::IO,x::D) = print(io,x.f[1]," + ",x.f[2]," ϵ")
 
-# ╔═╡ ebf49bda-589f-4389-9a2a-cd5382bd0263
-# begin
-# 	# Add the last two rules
-# 	Base.:-(x::D, y::D) = D(x.f .- y.f)
-# 	Base.:*(x::D, y::D) = D((x.f[1]*y.f[1], (x.f[2]*y.f[1] + x.f[1]*y.f[2])))
-# end
-
-# ╔═╡ 9baf6cd3-5a63-424a-8576-a1bc5d1b5296
-#eps_notation(x::D) = Text("$(x.f[1]) + $(x.f[2]) ϵ")
-
-# ╔═╡ 60a8f02c-fd4b-4f3d-90f3-38723b015173
-
-
 # ╔═╡ c6c0840f-97a5-46ca-9e5c-d711409645ee
 D((1,0)) 
+
+# ╔═╡ a4b310a2-0f97-45f9-bb42-286d145ad7fb
+D((2,1)) * D((2,1))  # whoops I didn't define multiply
 
 # ╔═╡ eef51eb3-f61f-44fb-a5ef-c8092be651bf
 D((2,1))^2 # square just works!
@@ -1336,7 +1305,7 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╠═3abba47d-f2a4-4e8e-a5a4-18aa8724f880
+# ╟─3abba47d-f2a4-4e8e-a5a4-18aa8724f880
 # ╟─c10103e5-23d3-404a-a3a7-d77ca34f9d83
 # ╠═713ec357-e015-4b8a-9460-75f611dbe500
 # ╟─ea58e432-017d-468c-aa0e-8b119f4846d6
@@ -1356,29 +1325,23 @@ version = "0.9.1+5"
 # ╟─73571d42-53a5-4d02-b2e7-cc4a1e42db2c
 # ╠═de43006d-f6ad-4e63-af73-d3e7f9a33559
 # ╠═faff8119-5d7c-4ae5-84df-ca322505adee
-# ╠═89738277-a2ee-4546-902e-4557a1cdc0de
+# ╟─89738277-a2ee-4546-902e-4557a1cdc0de
 # ╠═cd425623-c338-4b48-92dc-c93bd87dd943
 # ╟─460f3ece-5b80-4538-972e-6d7b35ce8195
-# ╠═790ed2b0-91b1-4b2f-aac7-bab49aea4eb3
 # ╠═a8302810-f0fb-4d97-b008-d9c18736bc4f
 # ╟─09654e11-9e4e-4690-a60b-71f406afa0a4
-# ╠═18cc74a2-ad82-42a2-b2e4-cbde56b1cae3
 # ╠═c1ae7856-4583-4a89-ba9d-80f0d52e2b00
 # ╟─6d158dd8-d801-4b17-870e-3103dca2ccb3
 # ╠═077d539a-3c44-4f4d-8e1c-534b9cd693ed
 # ╠═d49bb920-4d17-4b90-b3bc-eefe0be6476c
 # ╟─7dd8371f-0c1f-43d7-89a7-c4f5244b683b
-# ╠═86f558ed-cbb4-47be-bcd0-1bf10b82a91d
 # ╠═f05dca86-35d4-4fc7-8b26-aecfca6cad17
 # ╟─1cdfe1b7-af30-4f9a-ac12-63c682be21cd
 # ╟─0760055e-9d68-48be-b3cd-34b72f42ebad
 # ╟─46503cf1-95d8-4a9c-98da-c465d66ba0c3
-# ╠═840e49c5-a5c3-4c47-ade0-087103fc8b02
 # ╠═91f00d28-d150-468e-88e7-bd67e52d232b
-# ╠═ebf49bda-589f-4389-9a2a-cd5382bd0263
-# ╠═9baf6cd3-5a63-424a-8576-a1bc5d1b5296
-# ╠═60a8f02c-fd4b-4f3d-90f3-38723b015173
 # ╠═c6c0840f-97a5-46ca-9e5c-d711409645ee
+# ╠═a4b310a2-0f97-45f9-bb42-286d145ad7fb
 # ╠═eef51eb3-f61f-44fb-a5ef-c8092be651bf
 # ╠═170439e3-ff0b-4100-86f2-5a920c8645da
 # ╠═45f42fd1-03e8-4901-8cf7-a10d757c9b96
